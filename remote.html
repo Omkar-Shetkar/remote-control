@@ -14,6 +14,7 @@
         --primary-color: #bb86fc;
         --text-color: #e0e0e0;
         --icon-color: #ffffff;
+        --error-color: #cf6679;
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -40,7 +41,44 @@
         font-weight: 300;
         color: #ffffff;
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
+      }
+      .video-input-container {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        background-color: var(--surface-color);
+        padding: 10px;
+        border-radius: 12px;
+      }
+      #video-url-input {
+        flex-grow: 1;
+        background: #333;
+        border: 1px solid #444;
+        color: var(--text-color);
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+      }
+      #video-url-input.input-error {
+        border-color: var(--error-color);
+      }
+      #video-url-input.input-error::placeholder {
+        color: var(--error-color);
+      }
+      #load-video-btn {
+        background-color: var(--primary-color);
+        color: #000;
+        border: none;
+        padding: 0 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+      }
+      #load-video-btn:active {
+        transform: scale(0.95);
       }
       .control-button {
         background-color: var(--surface-color);
@@ -75,7 +113,16 @@
         justify-content: space-around;
         align-items: center;
       }
+      .volume-and-mute-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        width: 100%;
+        padding: 0 10px;
+        box-sizing: border-box;
+      }
       .volume-control {
+        flex-grow: 1;
         display: flex;
         align-items: center;
         gap: 15px;
@@ -113,6 +160,15 @@
         cursor: pointer;
         border-radius: 50%;
       }
+      #toggle-mute {
+        width: 60px;
+        height: 60px;
+        flex-shrink: 0;
+      }
+      #toggle-mute svg {
+        width: 28px;
+        height: 28px;
+      }
       #status {
         position: fixed;
         top: 10px;
@@ -138,6 +194,15 @@
     <div class="container">
       <h1>Remote Control</h1>
 
+      <div class="video-input-container">
+        <input
+          type="text"
+          id="video-url-input"
+          placeholder="Enter YouTube URL or ID"
+        />
+        <button id="load-video-btn">Load</button>
+      </div>
+
       <div class="main-controls">
         <button class="control-button" id="seek-backward">
           <svg viewBox="0 0 24 24">
@@ -159,16 +224,15 @@
         </button>
       </div>
 
-      <div class="volume-control">
-        <svg viewBox="0 0 24 24">
-          <path
-            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
-          />
-        </svg>
-        <input type="range" id="volume-slider" min="0" max="100" value="80" />
-      </div>
-
-      <div class="main-controls">
+      <div class="volume-and-mute-container">
+        <div class="volume-control">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+            />
+          </svg>
+          <input type="range" id="volume-slider" min="0" max="100" value="80" />
+        </div>
         <button class="control-button" id="toggle-mute">
           <svg viewBox="0 0 24 24">
             <path
@@ -188,13 +252,13 @@
       const seekForwardBtn = document.getElementById("seek-forward");
       const toggleMuteBtn = document.getElementById("toggle-mute");
       const volumeSlider = document.getElementById("volume-slider");
+      const videoUrlInput = document.getElementById("video-url-input");
+      const loadVideoBtn = document.getElementById("load-video-btn");
 
-      let isPlaying = true; // Assume playing at start
+      let isPlaying = true;
       let ws;
 
       function connect() {
-        // This will connect to the server that served this file.
-        // No need to hardcode an IP address!
         const wsUrl = `ws://${window.location.host}`;
         ws = new WebSocket(wsUrl);
 
@@ -208,7 +272,7 @@
           console.log("Disconnected from WebSocket server.");
           statusDiv.textContent = "Disconnected";
           statusDiv.className = "status-disconnected";
-          setTimeout(connect, 3000); // Try to reconnect
+          setTimeout(connect, 3000);
         };
 
         ws.onerror = (error) => {
@@ -234,9 +298,45 @@
         pauseIcon.style.display = isPlaying ? "block" : "none";
       }
 
+      function getYouTubeId(url) {
+        if (!url) return null;
+        const regExp =
+          /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+
+        if (match && match[2].length === 11) {
+          return match[2];
+        } else if (url.length === 11) {
+          return url; // Assume raw video ID
+        }
+        return null;
+      }
+
+      loadVideoBtn.addEventListener("click", () => {
+        const url = videoUrlInput.value.trim();
+        const videoId = getYouTubeId(url);
+        videoUrlInput.classList.remove("input-error");
+
+        if (videoId) {
+          sendCommand("loadVideo", videoId);
+          videoUrlInput.value = "";
+          videoUrlInput.placeholder = "Enter YouTube URL or ID";
+          isPlaying = true;
+          updatePlayPauseUI();
+        } else {
+          videoUrlInput.classList.add("input-error");
+          videoUrlInput.value = "";
+          videoUrlInput.placeholder = "Invalid URL or ID. Try again.";
+        }
+      });
+
+      videoUrlInput.addEventListener("focus", () => {
+        videoUrlInput.classList.remove("input-error");
+        videoUrlInput.placeholder = "Enter YouTube URL or ID";
+      });
+
       playPauseBtn.addEventListener("click", () => {
-        const command = isPlaying ? "pause" : "play";
-        sendCommand(command);
+        sendCommand("togglePlay");
         isPlaying = !isPlaying;
         updatePlayPauseUI();
       });
@@ -249,10 +349,7 @@
         sendCommand("setVolume", parseInt(volumeSlider.value, 10));
       });
 
-      // Initialize UI
       updatePlayPauseUI();
-
-      // Initial connection
       connect();
     </script>
   </body>
