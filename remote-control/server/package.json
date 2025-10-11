@@ -1,0 +1,14 @@
+{
+  "name": "youtube-remote-server",
+  "version": "1.0.0",
+  "description": "A simple WebSocket server to relay commands for a YouTube remote control.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.17.0"
+  }
+}
