@@ -61,6 +61,10 @@ The terminal will show the player and remote URLs (default port 3000).
 - Video: YouTube IFrame Player API
 - Icons: Font Awesome
 
+## Architecture
+
+![alt text](image.png)
+
 ## Troubleshooting
 
 - "Connecting to server..." stuck
