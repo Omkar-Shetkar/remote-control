@@ -1,100 +1,79 @@
 # YouTube LAN Remote Control
 
-A simple web-based remote to play and manage a YouTube video on a laptop from a phone over the same local network.
+A simple web-based remote to play and manage a YouTube video on a laptop using a mobile phone over the same local network.
 
 ## Features
 
-- Load any YouTube video by URL or ID from the mobile remote
-- Play, pause, seek, and adjust volume
-- Mute/unmute
-- Toggle fullscreen on the player
-- Near real-time control via WebSockets
-- No installation — runs entirely in the browser
+- Load & play any YouTube video by URL or ID from the mobile remote.
+- Full playback controls: play, pause, seek, adjust volume.
+- Mute/unmute and toggle fullscreen.
+- Real-time commands over WebSockets (near-zero latency).
+- No installation — runs entirely in the browser.
 
 ## Technology stack
 
 - Frontend: HTML, CSS, JavaScript (YouTube IFrame Player API)
-- Backend: Node.js + Express.js (serves files)
+- Backend: Node.js + Express
 - Real-time: WebSockets
 
-## Setup & usage
+## Setup and usage
 
-### Prerequisite
+**Prerequisite:** Node.js installed on the laptop that will play the video.
 
-- Node.js installed on the laptop that will play the video.
+1. Place project files  
+   Put all files (`server.js`, `package.json`, `player.html`, `remote.html`, etc.) into a single folder on the laptop.
 
-### 1. Project files
+2. Install dependencies  
+   Open a terminal in the project folder and run:
 
-Place all project files (`server.js`, `package.json`, `player.html`, `remote.html`, etc.) into a single folder on the laptop.
-
-### 2. Install dependencies
-
-Open a terminal in the project folder and run:
-
-```bash
+```
 npm install
 ```
 
-### 3. Find your laptop's local IP
+3. Find your laptop's local IP address
 
-You will use this IP on your phone to connect.
-
-- Windows: `ipconfig` → look for "IPv4 Address"
-- macOS: `ifconfig | grep "inet "` → choose the non-127.0.0.1 address
+- Windows: `ipconfig` → look for "IPv4 Address" under active adapter.
+- macOS: `ifconfig | grep "inet "` → pick the non-127.0.0.1 address.
 - Linux: `hostname -I`
 
-### 4. Start the server
+4. Start the server
 
-In the project folder run:
-
-```bash
+```
 npm start
 ```
 
-You should see a message like `Server is listening on port 3000`.
+You should see a message like: `Server is listening on port 3000`. Keep the terminal open.
 
-### 5. Open player and remote
+5. Open the player and remote
 
-- On the laptop (player): open a browser to:
-
-```text
-http://localhost:3000
-```
-
-- On the phone (remote): connect the phone to the same Wi‑Fi and open:
-
-```text
-http://<YOUR_LAPTOP_IP>:3000/remote.html
-```
-
-Replace `<YOUR_LAPTOP_IP>` with the IP from step 3.
+- On the laptop (player): open `http://localhost:3000` in a browser.
+- On the phone (remote, same Wi‑Fi): open `http://<YOUR_LAPTOP_IP>:3000/remote.html` (replace `<YOUR_LAPTOP_IP>` with the address from step 3).
 
 ## Troubleshooting
 
-- Remote/player won't load:
-  - Ensure both devices are on the same Wi‑Fi and the IP is correct.
-  - Check the laptop firewall (try temporarily disabling to test).
-- Code changes not visible:
-  - Perform a hard refresh (Ctrl+Shift+R) or clear the browser cache.
-- Video starts muted and cannot be unmuted remotely:
-  - Browser security may block autoplay audio. Click anywhere on the player page once on the laptop to enable audio and fullscreen controls from the remote.
+- Problem: Remote/player page won't load.  
+  Solution: Ensure both devices are on the same network, check the IP, and verify the laptop firewall isn't blocking connections.
+
+- Problem: Code changes not visible.  
+  Solution: Perform a hard refresh or clear browser cache.
+
+- Problem: Video starts muted and won't unmute from remote.  
+  Solution: Click once on the player page on the laptop to satisfy browser audio permission policies.
+
+- Problem: Video won't enter fullscreen automatically.  
+  Solution: Most browsers block automatic fullscreen; click once on the player page to allow it.
 
 ## Packaging for a new laptop
 
-1. Copy the entire project folder to the new laptop (USB, network, etc.).
+1. Copy the entire project folder (all `.js`, `.html`, `.json` files) to the new laptop.
 2. Install Node.js if needed.
 3. In the project folder run:
 
-```bash
-npm install
 ```
-
-4. Start the server:
-
-```bash
+npm install
 npm start
 ```
 
-Then follow the usage steps above.
+4. Follow the usage steps above.
 
-You can now control the laptop YouTube player from your phone over the LAN.
+You can now control the laptop's YouTube player from your phone over the local network.

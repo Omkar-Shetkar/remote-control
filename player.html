@@ -6,13 +6,11 @@
     <title>YouTube Player</title>
     <style>
       body {
-        /* Remove all margins and hide any potential scrollbars */
         margin: 0;
         overflow: hidden;
-        background-color: #000; /* Black background for a seamless look */
+        background-color: #000;
       }
       #player-container {
-        /* Make the container cover the entire viewport */
         position: absolute;
         top: 0;
         left: 0;
@@ -24,7 +22,6 @@
         height: 100%;
       }
       #status {
-        /* Position status overlay at the bottom */
         position: fixed;
         bottom: 20px;
         left: 50%;
@@ -48,7 +45,6 @@
     </style>
   </head>
   <body>
-    <!-- The H1 title is removed for a full-screen experience -->
     <div id="player-container">
       <div id="player"></div>
     </div>
@@ -61,7 +57,9 @@
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
       var player;
-      const YOUTUBE_VIDEO_ID = "M7lc1UVf-VE"; // Default: "Lofi Girl"
+      var ws;
+      var stateCheckInterval;
+      const YOUTUBE_VIDEO_ID = "M7lc1UVf-VE";
 
       function onYouTubeIframeAPIReady() {
         player = new YT.Player("player", {
@@ -71,13 +69,14 @@
           playerVars: {
             playsinline: 1,
             autoplay: 1,
-            controls: 0, // Hide YouTube's native controls
-            showinfo: 0, // Hide video title, etc.
-            rel: 0, // Don't show related videos at the end
-            modestbranding: 1, // Reduce YouTube logo
+            controls: 0,
+            showinfo: 0,
+            rel: 0,
+            modestbranding: 1,
           },
           events: {
             onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
           },
         });
       }
@@ -87,19 +86,33 @@
         event.target.unMute();
         event.target.setVolume(80);
         event.target.playVideo();
-
-        // Add a double-click listener to the container for a reliable fullscreen toggle
         document
           .getElementById("player-container")
           .addEventListener("dblclick", toggleFullScreen);
-
         connectToWebSocket();
+      }
+
+      function onPlayerStateChange(event) {
+        console.log("Player state changed.");
+        sendStateUpdate();
+      }
+
+      function sendStateUpdate() {
+        if (!player || typeof player.getPlayerState !== "function") return;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const state = {
+            isPlaying: player.getPlayerState() === YT.PlayerState.PLAYING,
+            isMuted: player.isMuted(),
+            volume: player.getVolume(),
+          };
+          ws.send(JSON.stringify({ type: "stateUpdate", state: state }));
+        }
       }
 
       function connectToWebSocket() {
         const statusDiv = document.getElementById("status");
-
-        const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
+        const wsUrl = `ws://${window.location.host}`; // The server now serves both files and websockets
+        ws = new WebSocket(wsUrl);
 
         ws.onopen = function () {
           console.log("Connected to WebSocket server.");
@@ -108,13 +121,19 @@
           setTimeout(() => {
             statusDiv.style.opacity = "0";
           }, 3000);
+          ws.send(JSON.stringify({ type: "identify", clientType: "player" }));
+
+          // Start periodically checking and sending state
+          if (stateCheckInterval) clearInterval(stateCheckInterval);
+          stateCheckInterval = setInterval(sendStateUpdate, 1000); // Send update every second
         };
 
         ws.onmessage = function (event) {
-          console.log("Message from server: ", event.data);
           try {
             const data = JSON.parse(event.data);
-            handleCommand(data.command, data.value);
+            if (data.type === "command") {
+              handleCommand(data.command, data.value);
+            }
           } catch (error) {
             console.error("Could not parse message from server:", error);
           }
@@ -125,6 +144,7 @@
           statusDiv.style.opacity = "1";
           statusDiv.textContent = "Disconnected. Will try to reconnect...";
           statusDiv.className = "status-disconnected";
+          if (stateCheckInterval) clearInterval(stateCheckInterval);
           setTimeout(connectToWebSocket, 3000);
         };
 
@@ -136,38 +156,26 @@
 
       function handleCommand(command, value) {
         if (!player) return;
-
         switch (command) {
           case "togglePlay":
             const playerState = player.getPlayerState();
-            if (playerState === YT.PlayerState.PLAYING) {
-              player.pauseVideo();
-            } else {
-              player.playVideo();
-            }
+            if (playerState === YT.PlayerState.PLAYING) player.pauseVideo();
+            else player.playVideo();
             break;
           case "toggleMute":
-            if (player.isMuted()) {
-              player.unMute();
-            } else {
-              player.mute();
-            }
+            if (player.isMuted()) player.unMute();
+            else player.mute();
             break;
           case "seek":
-            const newTime = player.getCurrentTime() + value;
-            player.seekTo(newTime, true);
+            player.seekTo(player.getCurrentTime() + value, true);
             break;
           case "setVolume":
             player.unMute();
             player.setVolume(value);
             break;
           case "loadVideo":
-            if (value) {
-              console.log(`Loading new video: ${value}`);
-              player.loadVideoById(value);
-            }
+            if (value) player.loadVideoById(value);
             break;
-          // The 'toggleFullscreen' case is removed as it's now handled by double-clicking.
           default:
             console.log(`Unknown command: ${command}`);
         }
@@ -176,31 +184,13 @@
       function toggleFullScreen() {
         const iframe = player.getIframe();
         if (!document.fullscreenElement) {
-          if (iframe.requestFullscreen) {
-            iframe.requestFullscreen();
-          } else if (iframe.mozRequestFullScreen) {
-            /* Firefox */
-            iframe.mozRequestFullScreen();
-          } else if (iframe.webkitRequestFullscreen) {
-            /* Chrome, Safari & Opera */
+          if (iframe.requestFullscreen) iframe.requestFullscreen();
+          else if (iframe.webkitRequestFullscreen)
             iframe.webkitRequestFullscreen();
-          } else if (iframe.msRequestFullscreen) {
-            /* IE/Edge */
-            iframe.msRequestFullscreen();
-          }
         } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen();
-          } else if (document.mozCancelFullScreen) {
-            /* Firefox */
-            document.mozCancelFullScreen();
-          } else if (document.webkitExitFullscreen) {
-            /* Chrome, Safari and Opera */
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen)
             document.webkitExitFullscreen();
-          } else if (document.msExitFullscreen) {
-            /* IE/Edge */
-            document.msExitFullscreen();
-          }
         }
       }
     </script>

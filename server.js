@@ -1,58 +1,80 @@
-// Import necessary libraries
-const { WebSocketServer } = require("ws");
 const express = require("express");
 const http = require("http");
+const WebSocket = require("ws");
 const path = require("path");
 
-// Define the port number
-const PORT = 8080;
-
-// Create an Express app to serve our HTML files
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
-// Serve static files (like remote.html and player.html) from the current directory
+// Serve static files from the current directory
 app.use(express.static(path.join(__dirname)));
 
-// Create a standard HTTP server using the Express app
-const server = http.createServer(app);
+// Store clients by type
+const players = new Set();
+const remotes = new Set();
 
-// Create a new WebSocket server and attach it to the HTTP server
-const wss = new WebSocketServer({ server });
-
-console.log(`[Server] Starting HTTP and WebSocket server on port ${PORT}...`);
-console.log(`[Server] Player page: http://localhost:${PORT}/player.html`);
-console.log(`[Server] Remote page: http://<your-ip>:${PORT}/remote.html`);
-
-// Handle WebSocket connections
 wss.on("connection", (ws) => {
-  console.log("[Server] A new client has connected.");
+  console.log("A client connected");
 
-  // Relay messages to other clients
   ws.on("message", (message) => {
-    console.log(`[Server] Received message: ${message}`);
-    // Broadcast the message to all other connected clients
-    wss.clients.forEach((client) => {
-      if (client !== ws && client.readyState === client.OPEN) {
-        client.send(message.toString());
-        console.log(`[Server] Relayed message to a client.`);
+    let data;
+    try {
+      data = JSON.parse(message);
+    } catch (e) {
+      console.error("Invalid JSON received:", message);
+      return;
+    }
+
+    // 1. Handle client identification
+    if (data.type === "identify") {
+      if (data.clientType === "player") {
+        console.log("Player client identified");
+        players.add(ws);
+      } else if (data.clientType === "remote") {
+        console.log("Remote client identified");
+        remotes.add(ws);
       }
-    });
+      return;
+    }
+
+    // 2. Route messages based on client type
+    if (remotes.has(ws) && data.type === "command") {
+      // Message from a remote: forward to all players
+      console.log("Command from remote:", data.command);
+      players.forEach((player) => {
+        if (player.readyState === WebSocket.OPEN) {
+          player.send(JSON.stringify(data));
+        }
+      });
+    } else if (players.has(ws) && data.type === "stateUpdate") {
+      // Message from a player: forward to all remotes
+      // console.log('State update from player:', data.state); // Can be noisy, uncomment for debugging
+      remotes.forEach((remote) => {
+        if (remote.readyState === WebSocket.OPEN) {
+          remote.send(JSON.stringify(data));
+        }
+      });
+    }
   });
 
-  // Handle disconnections
   ws.on("close", () => {
-    console.log("[Server] A client has disconnected.");
+    console.log("A client disconnected");
+    // Remove the client from the sets when they disconnect
+    players.delete(ws);
+    remotes.delete(ws);
   });
 
-  // Handle errors
   ws.on("error", (error) => {
-    console.error("[Server] An error occurred:", error);
+    console.error("WebSocket error:", error);
   });
 });
 
-// Start the HTTP server, which also starts the WebSocket server
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
+  console.log(`Server is listening on port ${PORT}`);
+  console.log(`Open http://localhost:${PORT}/player.html on your laptop.`);
   console.log(
-    `[Server] Server is officially running and listening on port ${PORT}.`
+    `Open http://<your-laptop-ip>:${PORT}/remote.html on your phone.`
   );
 });
