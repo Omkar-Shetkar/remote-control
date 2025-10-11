@@ -165,7 +165,7 @@
             d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
           />
         </svg>
-        <input type="range" id="volume-slider" min="0" max="100" value="50" />
+        <input type="range" id="volume-slider" min="0" max="100" value="80" />
       </div>
 
       <div class="main-controls">
@@ -193,9 +193,10 @@
       let ws;
 
       function connect() {
-        // !!! IMPORTANT !!!
-        // Replace 'localhost' with your laptop's local IP address.
-        ws = new WebSocket("ws://192.168.1.2:8080");
+        // This will connect to the server that served this file.
+        // No need to hardcode an IP address!
+        const wsUrl = `ws://${window.location.host}`;
+        ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log("Connected to WebSocket server.");
@@ -228,8 +229,7 @@
         }
       }
 
-      function togglePlayPauseUI() {
-        isPlaying = !isPlaying;
+      function updatePlayPauseUI() {
         playIcon.style.display = isPlaying ? "none" : "block";
         pauseIcon.style.display = isPlaying ? "block" : "none";
       }
@@ -237,19 +237,20 @@
       playPauseBtn.addEventListener("click", () => {
         const command = isPlaying ? "pause" : "play";
         sendCommand(command);
-        togglePlayPauseUI();
+        isPlaying = !isPlaying;
+        updatePlayPauseUI();
       });
 
-      seekBackwardBtn.addEventListener("click", () => sendCommand("seek", -10)); // seek 10s back
-      seekForwardBtn.addEventListener("click", () => sendCommand("seek", 10)); // seek 10s forward
+      seekBackwardBtn.addEventListener("click", () => sendCommand("seek", -10));
+      seekForwardBtn.addEventListener("click", () => sendCommand("seek", 10));
       toggleMuteBtn.addEventListener("click", () => sendCommand("toggleMute"));
 
       volumeSlider.addEventListener("input", () => {
         sendCommand("setVolume", parseInt(volumeSlider.value, 10));
       });
 
-      // Initialize UI based on default state
-      togglePlayPauseUI();
+      // Initialize UI
+      updatePlayPauseUI();
 
       // Initial connection
       connect();

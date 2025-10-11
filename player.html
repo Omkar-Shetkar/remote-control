@@ -58,19 +58,14 @@
     <div id="status" class="status-disconnected">Connecting to server...</div>
 
     <script>
-      // 1. Load the IFrame Player API code asynchronously.
       var tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       var firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
       var player;
-      // The YouTube video ID you want to play.
-      // You can change this to any YouTube video ID.
       const YOUTUBE_VIDEO_ID = "M7lc1UVf-VE"; // Default: "Lofi Girl"
 
-      // 2. This function creates an <iframe> (and YouTube player)
-      //    after the API code downloads.
       function onYouTubeIframeAPIReady() {
         player = new YT.Player("player", {
           height: "100%",
@@ -79,7 +74,7 @@
           playerVars: {
             playsinline: 1,
             autoplay: 1,
-            controls: 0, // Hide default controls
+            controls: 0,
           },
           events: {
             onReady: onPlayerReady,
@@ -87,10 +82,8 @@
         });
       }
 
-      // 3. The API will call this function when the video player is ready.
       function onPlayerReady(event) {
         console.log("YouTube Player is ready.");
-        // Mute the video initially to allow autoplay in most browsers
         event.target.mute();
         event.target.playVideo();
         connectToWebSocket();
@@ -99,9 +92,8 @@
       function connectToWebSocket() {
         const statusDiv = document.getElementById("status");
 
-        // IMPORTANT: Replace 'localhost' with your laptop's local IP address
-        // if you are connecting from your mobile on the same Wi-Fi network.
-        const ws = new WebSocket("ws://192.168.1.2:8080");
+        // IMPORTANT: Replace 'localhost' with your laptop's local IP address.
+        const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
 
         ws.onopen = function () {
           console.log("Connected to WebSocket server.");
@@ -123,7 +115,6 @@
           console.log("Disconnected from WebSocket server.");
           statusDiv.textContent = "Disconnected. Will try to reconnect...";
           statusDiv.className = "status-disconnected";
-          // Attempt to reconnect every 3 seconds
           setTimeout(connectToWebSocket, 3000);
         };
 
@@ -155,6 +146,7 @@
             player.seekTo(newTime, true);
             break;
           case "setVolume":
+            player.unMute();
             player.setVolume(value);
             break;
           default:
