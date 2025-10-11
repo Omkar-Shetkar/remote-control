@@ -1,70 +1,100 @@
-# YouTube Remote Control — Full Project
+# YouTube LAN Remote Control
 
-Control a YouTube video on your laptop using your mobile phone as a remote.
+A simple web-based remote to play and manage a YouTube video on a laptop from a phone over the same local network.
 
-## Files
+## Features
 
-Place these four files in the same directory on your laptop:
+- Load any YouTube video by URL or ID from the mobile remote
+- Play, pause, seek, and adjust volume
+- Mute/unmute
+- Toggle fullscreen on the player
+- Near real-time control via WebSockets
+- No installation — runs entirely in the browser
 
-- `package.json`
-- `server.js`
-- `player.html`
-- `remote.html`
+## Technology stack
 
-## Prerequisites
+- Frontend: HTML, CSS, JavaScript (YouTube IFrame Player API)
+- Backend: Node.js + Express.js (serves files)
+- Real-time: WebSockets
 
-- Node.js installed
-- Both devices on the same Wi‑Fi network
+## Setup & usage
 
-## How to run
+### Prerequisite
 
-1. Install dependencies  
-   Open a terminal in the project directory and run:
+- Node.js installed on the laptop that will play the video.
 
-   ```
-   npm install
-   ```
+### 1. Project files
 
-   This installs `express` and `ws`.
+Place all project files (`server.js`, `package.json`, `player.html`, `remote.html`, etc.) into a single folder on the laptop.
 
-2. Start the server  
-   In the same terminal run:
+### 2. Install dependencies
 
-   ```
-   npm start
-   ```
+Open a terminal in the project folder and run:
 
-   The server will run on port `8080`.
+```bash
+npm install
+```
 
-3. Open the player on your laptop  
-   In a browser on your laptop navigate to:
+### 3. Find your laptop's local IP
 
-   ```
-   http://localhost:8080/player.html
-   ```
+You will use this IP on your phone to connect.
 
-   The YouTube player should appear and show "Connected".
+- Windows: `ipconfig` → look for "IPv4 Address"
+- macOS: `ifconfig | grep "inet "` → choose the non-127.0.0.1 address
+- Linux: `hostname -I`
 
-4. Open the remote on your phone
+### 4. Start the server
 
-   - Ensure your phone is on the same Wi‑Fi network as your laptop.
-   - Find your laptop's local IP:
-     - Windows: run `ipconfig` and look for the "IPv4 Address".
-     - macOS: open System Settings > Wi‑Fi and view the IP.
-   - On your phone, open a browser and go to:
-     ```
-     http://YOUR_LAPTOP_IP:8080/remote.html
-     ```
-     Example:
-     ```
-     http://192.168.1.55:8080/remote.html
-     ```
+In the project folder run:
 
-5. Control the player  
-   The remote page should show "Connected". Use the buttons to play, pause, seek, and adjust volume on the laptop's video.
+```bash
+npm start
+```
+
+You should see a message like `Server is listening on port 3000`.
+
+### 5. Open player and remote
+
+- On the laptop (player): open a browser to:
+
+```text
+http://localhost:3000
+```
+
+- On the phone (remote): connect the phone to the same Wi‑Fi and open:
+
+```text
+http://<YOUR_LAPTOP_IP>:3000/remote.html
+```
+
+Replace `<YOUR_LAPTOP_IP>` with the IP from step 3.
 
 ## Troubleshooting
 
-- Confirm both devices are on the same network.
-- Check firewall settings if the phone cannot reach the laptop.
-- Verify the server logs show it is listening on port `8080`.
+- Remote/player won't load:
+  - Ensure both devices are on the same Wi‑Fi and the IP is correct.
+  - Check the laptop firewall (try temporarily disabling to test).
+- Code changes not visible:
+  - Perform a hard refresh (Ctrl+Shift+R) or clear the browser cache.
+- Video starts muted and cannot be unmuted remotely:
+  - Browser security may block autoplay audio. Click anywhere on the player page once on the laptop to enable audio and fullscreen controls from the remote.
+
+## Packaging for a new laptop
+
+1. Copy the entire project folder to the new laptop (USB, network, etc.).
+2. Install Node.js if needed.
+3. In the project folder run:
+
+```bash
+npm install
+```
+
+4. Start the server:
+
+```bash
+npm start
+```
+
+Then follow the usage steps above.
+
+You can now control the laptop YouTube player from your phone over the LAN.
