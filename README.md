@@ -107,12 +107,12 @@ This project uses a Node.js server to create a real-time, two-way communication 
 
 ```mermaid
 graph TD
-   subgraph Your Phone (Remote)
+   subgraph "Your Phone (Remote)"
       A[Open remote.html] --> B{Press Play Button};
       B --> C[Sends 'play' command];
    end
 
-   subgraph Your Laptop (Player)
+   subgraph "Your Laptop (Player)"
       F[Open player.html] --> G{Receives 'play' command};
       G --> H[Tells YouTube player to play];
       H --> I[Sends 'state: playing' update];
