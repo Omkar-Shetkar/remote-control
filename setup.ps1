@@ -1,53 +1,127 @@
-# YouTube Remote Control - Windows Setup Script
-# This script automates the entire setup process.
-
-# Function to check if running as Administrator
-function Test-Admin {
-    $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
-    return $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# --- Helper Functions ---
+function Print-Info {
+    param([string]$message)
+    Write-Host "ℹ️  $message" -ForegroundColor Cyan
 }
 
-if (-not (Test-Admin)) {
-    Write-Host "This script needs to be run with Administrator privileges." -ForegroundColor Red
-    Write-Host "Please right-click your PowerShell or Terminal icon and select 'Run as Administrator'." -ForegroundColor Yellow
-    Start-Sleep -Seconds 10
-    Exit
+function Print-Success {
+    param([string]$message)
+    Write-Host "✅ $message" -ForegroundColor Green
 }
 
-Write-Host "Starting setup for YouTube Remote Control..." -ForegroundColor Cyan
+function Print-Warning {
+    param([string]$message)
+    Write-Host "⚠️  $message" -ForegroundColor Yellow
+}
 
-# --- Step 1: Install Chocolatey (Windows Package Manager) if not present ---
-Write-Host "Checking for Chocolatey package manager..."
-if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-    Write-Host "Chocolatey not found. Installing..." -ForegroundColor Yellow
-    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+function Print-Error {
+    param([string]$message)
+    Write-Host "❌ ERROR: $message" -ForegroundColor Red
+    exit 1
+}
+
+function Command-Exists {
+    param([string]$command)
+    return (Get-Command $command -ErrorAction SilentlyContinue)
+}
+
+# --- Main Script ---
+Clear-Host
+Write-Host "🚀 --- YouTube LAN Remote Control Setup (Windows) --- 🚀" -ForegroundColor Magenta
+Write-Host "This script will automatically set up the project for you."
+Write-Host ""
+
+# 1. Check for Chocolatey Package Manager
+$choco_installed = Command-Exists "choco"
+if (-not $choco_installed) {
+    Print-Warning "Chocolatey package manager not found."
+    Print-Info "Chocolatey is recommended for easy installation of dependencies."
+    $confirm = Read-Host "Do you want to install Chocolatey now? (y/n)"
+    if ($confirm -eq 'y') {
+        Print-Info "Installing Chocolatey... 🍫"
+        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        if (-not (Command-Exists "choco")) {
+            Print-Error "Chocolatey installation failed. Please install it manually and re-run the script."
+        }
+        Print-Success "Chocolatey installed successfully."
+    }
+}
+
+# 2. Check for Git
+Print-Info "Checking for Git..."
+if (-not (Command-Exists "git")) {
+    Print-Warning "Git is not installed."
+    if ($choco_installed) {
+        Print-Info "Installing Git using Chocolatey... ⏳"
+        choco install git -y --force || Print-Error "Failed to install Git with Chocolatey."
+    } else {
+        Print-Error "Please install Git manually and re-run the script."
+    }
+    Print-Success "Git installed."
 } else {
-    Write-Host "Chocolatey is already installed." -ForegroundColor Green
+    Print-Success "Git is installed."
 }
 
-# --- Step 2: Install Git and Node.js using Chocolatey ---
-Write-Host "Checking for Git and Node.js..."
-choco install git nodejs-lts -y --no-progress
-
-# Refresh environment variables to recognize new installations
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-
-# --- Step 3: Clone the Repository ---
-$repoUrl = "https://github.com/Omkar-Shetkar/remote-control.git"
-$cloneDir = "remote-control"
-if (Test-Path $cloneDir) {
-    Write-Host "Project directory '$cloneDir' already exists. Skipping clone." -ForegroundColor Yellow
+# 3. Check for Node.js
+Print-Info "Checking for Node.js..."
+if (-not (Command-Exists "node")) {
+    Print-Warning "Node.js is not installed."
+     if ($choco_installed) {
+        Print-Info "Installing Node.js (LTS) using Chocolatey... ⏳"
+        choco install nodejs-lts -y --force || Print-Error "Failed to install Node.js with Chocolatey."
+    } else {
+        Print-Error "Please install Node.js manually and re-run the script."
+    }
+    Print-Success "Node.js installed."
 } else {
-    Write-Host "Cloning the project from GitHub..." -ForegroundColor Cyan
-    git clone $repoUrl
+    Print-Success "Node.js is installed (version: $(node -v))."
 }
-cd $cloneDir
 
-# --- Step 4: Install Dependencies ---
-Write-Host "Installing project dependencies with npm..." -ForegroundColor Cyan
+
+# 4. Clone or Update Repository
+$repoDir = "remote-control"
+if (Test-Path $repoDir) {
+    Print-Warning "Directory '$repoDir' already exists. Attempting to update..."
+    Push-Location -Path $repoDir
+    git pull
+    if ($LASTEXITCODE -ne 0) {
+        Print-Warning "Failed to update the repository. Using the current local version."
+    } else {
+        Print-Success "Repository updated to the latest version."
+    }
+    Pop-Location
+} else {
+    Print-Info "Cloning the repository from GitHub... 📂"
+    git clone https://github.com/Omkar-Shetkar/remote-control.git
+    if ($LASTEXITCODE -ne 0) { Print-Error "Failed to clone repository." }
+    Print-Success "Repository cloned into '$repoDir'."
+}
+
+Set-Location $repoDir
+
+# 5. Install Dependencies
+Print-Info "Installing project dependencies with npm... 📦"
 npm install
+if ($LASTEXITCODE -ne 0) { Print-Error "npm install failed." }
+Print-Success "Dependencies installed."
 
-# --- Step 5: Launch the Application ---
-Write-Host "Setup complete! Starting the server..." -ForegroundColor Green
-Write-Host "You can stop the server at any time by pressing CTRL + C in this window." -ForegroundColor Yellow
-npm start
+# 6. Start the Server and Open Player
+Print-Info "Starting the server in a new window... ▶️"
+$playerUrl = "http://localhost:3000/player.html"
+
+# Start the server in a new PowerShell window
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "npm start"
+
+# Give the server a moment to start up
+Start-Sleep -Seconds 4
+
+Print-Info "Attempting to open the player page in your default browser... 🌐"
+Start-Process $playerUrl
+
+Write-Host ""
+Print-Success "🎉 Setup is complete! 🎉"
+Write-Host "The server is running in a new PowerShell window."
+Write-Host "The player page should be open in your browser."
+Write-Host "To stop the server, close the new PowerShell window that was opened."
+Write-Host ""
+

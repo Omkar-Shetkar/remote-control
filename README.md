@@ -1,82 +1,92 @@
-# YouTube LAN Remote
+YouTube LAN Remote Control
+# Remote-Control: Control YouTube Playback Remotely
 
-Control YouTube playback on your laptop or desktop using your mobile phone as a remote. A lightweight web-based remote control that works over your local network — play, pause, seek, control volume, and load new videos without touching your computer.
+Control YouTube playback on your laptop or desktop from your mobile phone over your local Wi-Fi network. This project uses a Node.js server with WebSockets for real-time, two-way communication.
 
-## Quick setup (recommended)
-
-Get up and running with a single command. These scripts install prerequisites, clone the repo, and start the server.
-
-### Windows (PowerShell Admin / Terminal Admin)
-
-```powershell
-iex (irm 'https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.ps1')
-```
-
-### macOS & Linux
-
-```bash
-curl -sL https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.sh | bash
-```
-
-After the script finishes it will display the URLs for the player and remote pages.
+---
 
 ## Features
 
-- Wireless control over your local network
-- Play / pause, mute / unmute, volume control, seek
-- Dynamic icon updates reflecting player state
-- Paste any YouTube URL or ID to load a video
-- Fullscreen toggle on the player (double-click)
-- Real-time sync via WebSocket
+- **Real-time Sync**: Instantaneous playback control (play, pause, seek, volume).
+- **Dynamic UI**: Remote control icons update to reflect the player's current state (e.g., shows a pause icon when playing).
+- **Video Loading**: Load any YouTube video by pasting its URL or ID into the remote.
+- **Smart Paste**: Automatically detects a YouTube link in your clipboard and shows a quick-paste button on the remote.
+- **Fullscreen Control**: Double-click the player on your laptop to toggle fullscreen mode.
+- **Auto-Discovery**: The player screen automatically displays the correct URL for the remote control, specific to your Wi-Fi network.
 
-## Manual installation
+---
 
-1. Ensure Git and Node.js (LTS) are installed.
-2. Clone the repository:
+## ⭐ Quick Setup (Recommended)
 
-```bash
-git clone https://github.com/Omkar-Shetkar/remote-control.git
-cd remote-control
+These one-line commands will download and run an intelligent script that automatically checks for prerequisites (like Git and Node.js), installs them if missing, clones the project, and launches the application.
+
+### For Windows
+
+Open PowerShell and run this command:
+
+```powershell
+irm https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.ps1 | iex
 ```
 
-3. Install dependencies:
+### For macOS & Linux
+
+Open your Terminal and run this command:
 
 ```bash
-npm install
+bash <(curl -s https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.sh)
 ```
 
-4. Start the server:
+---
 
-```bash
-npm start
-```
+## Manual Installation
 
-The terminal will show the player and remote URLs (default port 3000).
+If you prefer to set up the project manually, follow these steps.
 
-## Technology stack
+### Prerequisites
 
-- Backend: Node.js, Express
-- Realtime: WebSockets (ws)
-- Frontend: plain HTML, CSS, JavaScript
-- Video: YouTube IFrame Player API
-- Icons: Font Awesome
+- **Node.js**: v16 or higher
+- **Git**: Git SCM
 
-## Architecture
+### Steps
 
-![alt text](image.png)
+1. **Clone the Repository**:
+
+  ```bash
+  git clone https://github.com/Omkar-Shetkar/remote-control.git
+  ```
+
+2. **Navigate to the Directory**:
+
+  ```bash
+  cd remote-control
+  ```
+
+3. **Install Dependencies**:
+
+  ```bash
+  npm install
+  ```
+
+4. **Start the Server**:
+
+  ```bash
+  npm start
+  ```
+
+5. **Follow Terminal Instructions**: The terminal will display the URLs to open on your laptop (player) and mobile phone (remote).
+
+---
+
+## How It Works
+
+- **Node.js Server**: An all-in-one server using Express.js serves the static HTML files and manages the WebSocket connections.
+- **WebSocket (ws)**: Provides the real-time, bidirectional communication channel between the remote and the player.
+- **YouTube IFrame API**: Allows the player page to control the embedded YouTube video programmatically.
+
+---
 
 ## Troubleshooting
 
-- "Connecting to server..." stuck
-
-  - Make sure the Node.js server is running (npm start).
-  - Confirm both devices are on the same Wi‑Fi network.
-  - Check firewall settings for the server port (default: 3000).
-
-- Remote shows "Disconnected"
-
-  - Server may have stopped — check the terminal and restart.
-  - Verify network stability.
-
-- Video starts muted or won't play
-  - Browser autoplay policies may block audio. Click once on the player page to grant audio permission, then controls will work normally.
+- **"Connecting to server..." is stuck**: Ensure the Node.js server is running in your terminal and that your laptop and phone are connected to the same Wi-Fi network.
+- **Remote URL doesn't work**: Check your firewall settings. Sometimes, firewalls can block local network connections. You may need to create an exception for Node.js.
+- **Video starts muted**: This is a browser security feature. You must click once on the player page on your laptop to allow audio playback.

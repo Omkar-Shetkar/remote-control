@@ -1,69 +1,119 @@
 #!/bin/bash
 
-# YouTube Remote Control - macOS & Linux Setup Script
-# This script automates the entire setup process.
+# --- Color Definitions ---
+C_RESET='\033[0m'
+C_RED='\033[0;31m'
+C_GREEN='\033[0;32m'
+C_YELLOW='\033[0;33m'
+C_BLUE='\033[0;34m'
+C_CYAN='\033[0;36m'
 
-echo -e "\033[0;36mStarting setup for YouTube Remote Control...\033[0m"
+# --- Helper Functions ---
+print_info() {
+    echo -e "${C_BLUE}ℹ️  $1${C_RESET}"
+}
 
-# --- Step 1: Install Git ---
-if ! command -v git &> /dev/null
-then
-    echo -e "\033[0;33mGit not found. Installing...\033[0m"
-    # Check for package manager and install Git
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if command -v apt-get &> /dev/null; then
-            sudo apt-get update && sudo apt-get install -y git
-        elif command -v yum &> /dev/null; then
-            sudo yum install -y git
-        else
-            echo -e "\033[0;31mCould not find apt-get or yum. Please install Git manually and re-run the script.\033[0m"
-            exit 1
-        fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        # On macOS, the command line tools installer will prompt the user if Git isn't found.
-        xcode-select --install
-    fi
+print_success() {
+    echo -e "${C_GREEN}✅ $1${C_RESET}"
+}
+
+print_warning() {
+    echo -e "${C_YELLOW}⚠️  $1${C_RESET}"
+}
+
+print_error() {
+    echo -e "${C_RED}❌ ERROR: $1${C_RESET}"
+    exit 1
+}
+
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# --- Main Script ---
+clear
+echo -e "${C_CYAN}🚀 --- YouTube LAN Remote Control Setup --- 🚀${C_RESET}"
+echo "This script will automatically set up the project for you."
+echo
+
+# 1. Check for Git
+print_info "Checking for Git..."
+if ! command_exists git; then
+    print_warning "Git is not installed."
+    print_info "Please install Git and re-run the script."
+    print_info "On Debian/Ubuntu: sudo apt install git"
+    print_info "On macOS (with Homebrew): brew install git"
+    exit 1
 else
-    echo -e "\033[0;32mGit is already installed.\033[0m"
+    print_success "Git is installed."
 fi
 
-
-# --- Step 2: Install nvm (Node Version Manager) and Node.js ---
+# 2. Check for Node.js and nvm
+print_info "Checking for Node.js..."
+# Source nvm if it exists to make it available to the script
 export NVM_DIR="$HOME/.nvm"
-if [ ! -s "$NVM_DIR/nvm.sh" ]; then
-    echo -e "\033[0;33mNVM (Node Version Manager) not found. Installing...\033[0m"
-    # Download and run the nvm install script
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-    # Source nvm to make it available in the current script
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+if ! command_exists node; then
+    print_warning "Node.js is not installed."
+    if ! command_exists nvm; then
+        print_info "nvm (Node Version Manager) not found. Installing nvm..."
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Source nvm again
+        print_success "nvm installed."
+    fi
+    print_info "Installing the latest LTS version of Node.js using nvm... ⏳"
+    nvm install --lts || print_error "Failed to install Node.js."
+    nvm use --lts
+    print_success "Node.js installed."
 else
-    echo -e "\033[0;32mNVM is already installed.\033[0m"
-    # Source nvm if it exists
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    print_success "Node.js is installed (version: $(node -v))."
 fi
 
-echo -e "\033[0;36mInstalling latest LTS version of Node.js...\033[0m"
-nvm install --lts
-nvm use --lts
-
-
-# --- Step 3: Clone the Repository ---
+# 3. Clone Repository
 REPO_DIR="remote-control"
 if [ -d "$REPO_DIR" ]; then
-    echo -e "\033[0;33mProject directory '$REPO_DIR' already exists. Skipping clone.\033[0m"
+    print_warning "Directory '$REPO_DIR' already exists. Updating..."
+    cd "$REPO_DIR" || print_error "Could not change to directory '$REPO_DIR'."
+    git pull || print_warning "git pull failed. Continuing with the existing version."
+    cd ..
 else
-    echo -e "\033[0;36mCloning the project from GitHub...\033[0m"
-    git clone https://github.com/Omkar-Shetkar/remote-control.git
+    print_info "Cloning the repository from GitHub... 📂"
+    git clone https://github.com/Omkar-Shetkar/remote-control.git || print_error "Failed to clone repository."
+    print_success "Repository cloned into '$REPO_DIR'."
 fi
-cd $REPO_DIR
 
+cd "$REPO_DIR" || print_error "Could not change to directory '$REPO_DIR'."
 
-# --- Step 4: Install Dependencies ---
-echo -e "\033[0;36mInstalling project dependencies with npm...\033[0m"
-npm install
+# 4. Install Dependencies
+print_info "Installing project dependencies with npm... 📦"
+npm install || print_error "npm install failed."
+print_success "Dependencies installed."
 
+# 5. Start the Server and Open Player
+print_info "Starting the server in the background... ▶️"
+npm start &
+SERVER_PID=$!
 
-# --- Step 5: Launch the Application ---
-echo -e "\033[0;32mSetup complete! Starting the server...\033[0m"
-echo -e "\033[0;33mYou can stop the server at any time by pressing CTRL + C in this window.\033[0m"
-npm start
+# Give the server a moment to start up
+sleep 3
+
+PLAYER_URL="http://localhost:3000/player.html"
+print_info "Attempting to open the player page in your default browser... 🌐"
+
+if command_exists xdg-open; then
+    xdg-open "$PLAYER_URL" # Linux
+elif command_exists open; then
+    open "$PLAYER_URL" # macOS
+else
+    print_warning "Could not automatically open the browser."
+fi
+
+echo
+print_success "🎉 Setup is complete! 🎉"
+echo -e "The server is running in the background (PID: ${C_YELLOW}$SERVER_PID${C_RESET})."
+echo -e "The player page should be open in your browser."
+echo -e "To stop the server, run: ${C_YELLOW}kill $SERVER_PID${C_RESET}"
+echo
+
