@@ -53,7 +53,8 @@ if (-not (Command-Exists "git")) {
     Print-Warning "Git is not installed."
     if ($choco_installed) {
         Print-Info "Installing Git using Chocolatey... ⏳"
-        choco install git -y --force || Print-Error "Failed to install Git with Chocolatey."
+        choco install git -y --force
+        if ($LASTEXITCODE -ne 0) { Print-Error "Failed to install Git with Chocolatey." }
     } else {
         Print-Error "Please install Git manually and re-run the script."
     }
@@ -68,7 +69,8 @@ if (-not (Command-Exists "node")) {
     Print-Warning "Node.js is not installed."
      if ($choco_installed) {
         Print-Info "Installing Node.js (LTS) using Chocolatey... ⏳"
-        choco install nodejs-lts -y --force || Print-Error "Failed to install Node.js with Chocolatey."
+        choco install nodejs-lts -y --force
+        if ($LASTEXITCODE -ne 0) { Print-Error "Failed to install Node.js with Chocolatey." }
     } else {
         Print-Error "Please install Node.js manually and re-run the script."
     }
