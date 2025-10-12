@@ -8,12 +8,16 @@ Ever wanted to pause, play, change the volume, or switch videos from your couch 
 ---
 
 ## ✨ Live Demo
-*A quick demonstration of loading a video via the smart paste button and controlling playback in real-time.*
+
+Experience the magic of controlling YouTube playback in real-time! Watch this quick demonstration to see how to load a video and how playback is seamlessly controlled:
+
+[![Live Demo](https://img.youtube.com/vi/Ec4icbVIZlI/0.jpg)](https://youtu.be/Ec4icbVIZlI?si=VJI16LrD8KsmRkem)
+
+Click the image or [this link](https://youtu.be/Ec4icbVIZlI?si=VJI16LrD8KsmRkem) to watch the demo.
 
 ---
 
 ## ⭐ Key Features
-
 - **📱 Full Playback Control**: Play, pause, seek, and control volume.
 - **📋 Smart URL Paste**: Automatically detects a YouTube link in your clipboard and shows a one-tap paste button.
 - **🔄 Real-Time Sync**: Control icons on the remote (like play/pause and mute/unmute) instantly update to reflect the player's current state.
@@ -37,7 +41,25 @@ irm https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.ps
 curl -sL https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.sh | bash
 ```
 
-The script will automatically check for dependencies (like Git and Node.js), clone the project, and launch the server. Just follow the on-screen instructions!
+The script will automatically handle the installation. Once it's finished, see the section below for how to start the server next time!
+
+---
+
+## ▶️ How to Start the Server Next Time
+
+You only need to run the setup script once. To start the server any time after that, just follow these two simple steps:
+
+1. Open your terminal (or PowerShell on Windows) and navigate to the project folder:
+  ```bash
+  cd remote-control
+  ```
+
+2. Run the start command:
+  ```bash
+  npm start
+  ```
+
+That's it! The server will launch, and your terminal will display the URLs to open on your laptop and phone. To stop the server, press `Ctrl + C` in the same terminal window.
 
 ---
 
@@ -50,24 +72,28 @@ If you prefer to set things up yourself:
 - **Git**
 
 ### Steps:
-1. **Clone the Repository**:
+1. Clone the Repository:
   ```bash
   git clone https://github.com/Omkar-Shetkar/remote-control.git
   ```
-2. **Navigate to the Directory**:
+
+2. Navigate to the Directory:
   ```bash
   cd remote-control
   ```
-3. **Install Dependencies**:
+
+3. Install Dependencies:
   ```bash
   npm install
   ```
-4. **Start the Server**:
+
+4. Start the Server:
   ```bash
   npm start
   ```
 
-The terminal will show you the URLs to open on your laptop and phone.
+### Stop the Server:
+To stop the server, go back to the terminal window where it is running and press `Ctrl + C`.
 
 ---
 
@@ -75,7 +101,6 @@ The terminal will show you the URLs to open on your laptop and phone.
 
 This project uses a Node.js server to create a real-time, two-way communication channel between your phone and laptop using WebSockets.
 
-### Components:
 - **The Player (Laptop)**: A web page that embeds a YouTube video and listens for commands.
 - **The Remote (Phone)**: A mobile-friendly web page that sends commands.
 - **The Server**: A lightweight Express and WebSocket server that relays messages instantly between the player and the remote.
