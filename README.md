@@ -31,6 +31,8 @@ Control YouTube on your laptop or PC from your phone. A simple Electron desktop 
 
   ![Installer Screenshot](<media/Screenshot 2025-10-17 at 9.27.52 AM.png>)
 
+![alt text](<media/remote.png>)
+
 ---
 
 ## How to Use
