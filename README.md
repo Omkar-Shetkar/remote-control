@@ -17,6 +17,7 @@ Control YouTube on your laptop or PC from your phone. A simple Electron desktop 
 1. Go to the Releases page: https://github.com/Omkar-Shetkar/remote-control/releases
 2. Download the installer for your OS (.exe, .dmg, or .AppImage).
 3. Run the installer.
+   ![alt text](<media/Screenshot 2025-10-17 at 9.27.52 AM.png>)
 
 ### Quick Notes
 
