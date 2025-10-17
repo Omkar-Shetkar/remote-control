@@ -1,132 +1,64 @@
-🚀 YouTube LAN Remote 🚀
-# Remote Control for YouTube
+# 🚀 YouTube LAN Remote
 
-Control YouTube on your laptop or PC from the comfort of your phone!
+Control YouTube on your laptop or PC from your phone. A simple Electron desktop app that exposes a browser-based YouTube player and a phone-accessible remote over your LAN.
 
-Ever wanted to pause, play, change the volume, or switch videos from your couch without touching your laptop? This project turns your phone into a powerful, real-time remote control for the YouTube player on your computer.
+## Key features
 
----
+- **System Tray Control** — Start/stop the server from the system tray (no CLI).
+- **Smart URL Paste** — Detects a YouTube link in clipboard for one-tap loading.
+- **Real‑Time Sync** — Remote icons update instantly to reflect player state.
+- **Auto‑Discovery** — Player screen shows the exact URL to open on your phone.
+- **Web‑Based Remote** — No phone app needed; use any browser.
 
-## ✨ Live Demo
+## Installation
 
-Experience the magic of controlling YouTube playback in real-time! Watch this quick demonstration to see how to load a video and how playback is seamlessly controlled:
+### From Releases
 
-[![Live Demo](https://img.youtube.com/vi/Ec4icbVIZlI/0.jpg)](https://youtu.be/Ec4icbVIZlI?si=VJI16LrD8KsmRkem)
+1. Go to the Releases page: https://github.com/Omkar-Shetkar/remote-control/releases
+2. Download the installer for your OS (.exe, .dmg, or .AppImage).
+3. Run the installer.
 
-Click the image or [this link](https://youtu.be/Ec4icbVIZlI?si=VJI16LrD8KsmRkem) to watch the demo.
+### Quick Notes
 
----
+- After installation, launch "YouTube LAN Remote" from your apps menu.
+- A tray/taskbar icon will appear.
 
-## ⭐ Key Features
-- **📱 Full Playback Control**: Play, pause, seek, and control volume.
-- **📋 Smart URL Paste**: Automatically detects a YouTube link in your clipboard and shows a one-tap paste button.
-- **🔄 Real-Time Sync**: Control icons on the remote (like play/pause and mute/unmute) instantly update to reflect the player's current state.
-- **🔗 Auto-Discovery**: The player screen automatically shows you the exact URL to open on your phone—no IP address hunting needed!
-- **🖥️ Immersive Viewing**: Double-click the player on your laptop to toggle a true full-screen experience.
-- **🌐 Web-Based**: No app installation needed! Works in the web browser on any modern phone and laptop on the same Wi-Fi network.
+## How to use
 
----
+1. Click the tray icon → **Start Server**.
+2. Click the tray icon → **Open Player in Browser** to open the player on your computer.
+3. On the player page you’ll see an URL (e.g. `http://192.168.1.5:3000/remote.html`). Open that on your phone’s browser.
+4. Control playback from the phone. To stop the app, use the tray icon → **Quit**.
 
-## ⚡ Get Started in 60 Seconds
+## For developers (manual build)
 
-Getting started is as simple as running one command. Open a terminal (on Mac/Linux) or PowerShell (on Windows) and run the command for your operating system.
+### Prerequisites
 
-### For Windows (run in PowerShell):
-```powershell
-irm https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.ps1 | iex
-```
+- Node.js (LTS)
+- Git
 
-### For macOS & Linux (run in Terminal):
+### Clone and install
+
 ```bash
-curl -sL https://raw.githubusercontent.com/Omkar-Shetkar/remote-control/main/setup.sh | bash
+git clone https://github.com/Omkar-Shetkar/remote-control.git
+cd remote-control
+npm install
 ```
 
-The script will automatically handle the installation. Once it's finished, see the section below for how to start the server next time!
+### Run in development
 
----
-
-## ▶️ How to Start the Server Next Time
-
-You only need to run the setup script once. To start the server any time after that, just follow these two simple steps:
-
-1. Open your terminal (or PowerShell on Windows) and navigate to the project folder:
-  ```bash
-  cd remote-control
-  ```
-
-2. Run the start command:
-  ```bash
-  npm start
-  ```
-
-That's it! The server will launch, and your terminal will display the URLs to open on your laptop and phone. To stop the server, press `Ctrl + C` in the same terminal window.
-
----
-
-## 🛠️ Manual Installation
-
-If you prefer to set things up yourself:
-
-### Prerequisites:
-- **Node.js** (LTS version)
-- **Git**
-
-### Steps:
-1. Clone the Repository:
-  ```bash
-  git clone https://github.com/Omkar-Shetkar/remote-control.git
-  ```
-
-2. Navigate to the Directory:
-  ```bash
-  cd remote-control
-  ```
-
-3. Install Dependencies:
-  ```bash
-  npm install
-  ```
-
-4. Start the Server:
-  ```bash
-  npm start
-  ```
-
-### Stop the Server:
-To stop the server, go back to the terminal window where it is running and press `Ctrl + C`.
-
----
-
-## 💡 How It Works
-
-This project uses a Node.js server to create a real-time, two-way communication channel between your phone and laptop using WebSockets.
-
-- **The Player (Laptop)**: A web page that embeds a YouTube video and listens for commands.
-- **The Remote (Phone)**: A mobile-friendly web page that sends commands.
-- **The Server**: A lightweight Express and WebSocket server that relays messages instantly between the player and the remote.
-
-```mermaid
-graph TD
-   subgraph "Your Phone (Remote)"
-      A[Open remote.html] --> B{Press Play Button};
-      B --> C[Sends 'play' command];
-   end
-
-   subgraph "Your Laptop (Player)"
-      F[Open player.html] --> G{Receives 'play' command};
-      G --> H[Tells YouTube player to play];
-      H --> I[Sends 'state: playing' update];
-   end
-
-   subgraph Server
-      D[WebSocket Server];
-   end
-
-   C -->|WebSocket| D;
-   D -->|WebSocket| G;
-   I -->|WebSocket| D;
-   D -->|WebSocket| J[Remote UI updates to show 'Pause' icon];
-
-   A -.->|HTTP Request| D;
-   F -.->|HTTP Request| D;
+```bash
+npm start
 ```
+
+### Build installers
+
+```bash
+npm run dist
+```
+
+Installers will be produced in `dist/`.
+
+## How it works
+
+Built with Electron: a Node.js backend + web frontend. Player and remote communicate via WebSockets for real‑time control and state sync.

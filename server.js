@@ -1,110 +1,107 @@
-const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-const path = require('path');
-const os = require('os');
-
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
+const path = require("path");
+const os = require("os");
 
 const PORT = process.env.PORT || 3000;
 
-// --- UPDATED: Smarter function to find the Wireless LAN IP address ---
-function getLocalIpAddress() {
-    const interfaces = os.networkInterfaces();
-    let wirelessIp = null;
-    let fallbackIp = null;
-
-    for (const name of Object.keys(interfaces)) {
-        for (const iface of interfaces[name]) {
-            // Skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
-            if (iface.family !== 'IPv4' || iface.internal) {
-                continue;
-            }
-
-            // --- Prioritization Logic ---
-            // Prioritize interfaces that are clearly wireless
-            if (name.toLowerCase().includes('wi-fi') || name.toLowerCase().includes('wlan')) {
-                wirelessIp = iface.address;
-                break; // Found the best option for this interface, move to the next
-            }
-            
-            // Keep the first valid IP as a fallback
-            if (!fallbackIp) {
-                fallbackIp = iface.address;
-            }
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    // Prioritize wireless interfaces
+    if (
+      name.toLowerCase().includes("wi-fi") ||
+      name.toLowerCase().includes("wlan")
+    ) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === "IPv4" && !iface.internal) {
+          return iface.address;
         }
-        if (wirelessIp) break; // Found a wireless IP, no need to check other interfaces
+      }
     }
-    
-    // Return the wireless IP if found, otherwise the fallback, otherwise localhost
-    return wirelessIp || fallbackIp || 'localhost';
+  }
+  // Fallback to any non-internal IPv4
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return "127.0.0.1";
 }
 
-app.use(express.static(path.join(__dirname)));
+function start() {
+  return new Promise((resolve, reject) => {
+    const app = express();
+    const server = http.createServer(app);
+    const wss = new WebSocket.Server({ server });
 
-const players = new Set();
-const remotes = new Set();
+    app.use(express.static(path.join(__dirname)));
 
-wss.on('connection', (ws) => {
-    console.log('A new client connected.');
+    const players = new Set();
+    const remotes = new Set();
 
-    ws.on('message', (message) => {
+    wss.on("connection", (ws) => {
+      ws.on("message", (message) => {
         try {
-            const data = JSON.parse(message);
+          const data = JSON.parse(message);
 
-            if (data.type === 'identify') {
-                if (data.clientType === 'player') {
-                    console.log('Player client identified.');
-                    players.add(ws);
-
-                    // Send server info with the correct remote URL to the player
-                    const remoteUrl = `http://${getLocalIpAddress()}:${PORT}/remote.html`;
-                    ws.send(JSON.stringify({ type: 'serverInfo', remoteUrl: remoteUrl }));
-
-                } else if (data.clientType === 'remote') {
-                    console.log('Remote client identified.');
-                    remotes.add(ws);
-                }
-                return;
+          if (data.type === "identify") {
+            if (data.clientType === "player") {
+              players.add(ws);
+              const remoteUrl = `http://${getLocalIp()}:${PORT}/remote.html`;
+              ws.send(JSON.stringify({ type: "serverInfo", remoteUrl }));
+            } else if (data.clientType === "remote") {
+              remotes.add(ws);
             }
+          }
 
-            if (remotes.has(ws) && data.type === 'command') {
-                players.forEach(player => {
-                    if (player.readyState === WebSocket.OPEN) {
-                        player.send(JSON.stringify(data));
-                    }
-                });
-            } else if (players.has(ws) && data.type === 'stateUpdate') {
-                remotes.forEach(remote => {
-                    if (remote.readyState === WebSocket.OPEN) {
-                        remote.send(JSON.stringify(data));
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Failed to process message:', error);
+          if (remotes.has(ws) && data.type === "command") {
+            players.forEach((player) => player.send(JSON.stringify(data)));
+          } else if (players.has(ws) && data.type === "stateUpdate") {
+            remotes.forEach((remote) => remote.send(JSON.stringify(data)));
+          }
+        } catch (e) {
+          console.error("Failed to process message:", e);
         }
-    });
+      });
 
-    ws.on('close', () => {
-        console.log('Client disconnected.');
+      ws.on("close", () => {
         players.delete(ws);
         remotes.delete(ws);
+      });
     });
 
-    ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
+    server.listen(PORT, () => {
+      const serverUrl = `http://${getLocalIp()}:${PORT}`;
+      console.log(`Server is running at ${serverUrl}`);
+      resolve({ instance: { server, wss }, url: serverUrl });
     });
-});
 
-server.listen(PORT, () => {
-    const ipAddress = getLocalIpAddress();
-    console.log(`\n--- YouTube Remote Server is running ---`);
-    console.log(`\n[PLAYER] Open this on your Laptop/Desktop:`);
-    console.log(`         http://localhost:${PORT}/player.html`);
-    console.log(`\n[REMOTE] Open this on your Mobile Phone:`);
-    console.log(`         http://${ipAddress}:${PORT}/remote.html\n`);
-});
+    server.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
 
+function stop(instance) {
+  return new Promise((resolve, reject) => {
+    if (!instance) return resolve();
+    const { server, wss } = instance;
+
+    wss.clients.forEach((client) => client.close());
+
+    wss.close((err) => {
+      if (err) return reject(err);
+      server.close((err) => {
+        if (err) return reject(err);
+        console.log("Server stopped.");
+        resolve();
+      });
+    });
+  });
+}
+
+module.exports = { start, stop };
