@@ -28,6 +28,7 @@ Control YouTube on your laptop or PC from your phone. A simple Electron desktop 
 
 - After installation, launch **YouTube LAN Remote** from your apps menu.
 - A tray/taskbar icon will appear.
+- **Both Desktop/Laptop and Mobile should be connected to same WiFi network.**
 
 |Desktop|Mobile|
 |---|---|
