@@ -4,6 +4,9 @@
 
 Control YouTube on your laptop or PC from your phone. A simple Electron desktop app that exposes a browser-based YouTube player and a phone-accessible remote over your LAN.
 
+## Demo Video
+
+Watch the app in action: [YouTube LAN Remote Demo](https://www.youtube.com/watch?v=NPspSgJGxNA)
 ---
 
 ## Key Features
